@@ -41,23 +41,23 @@
 
 # COMMAND ----------
 
-# kernel_gateway_init = """
-# #!/bin/bash
+kernel_gateway_init = """
+#!/bin/bash
 
-# wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb -O /tmp/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb && \
-# wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcublas-dev-11-3_11.5.1.109-1_amd64.deb -O /tmp/libcublas-dev-11-3_11.5.1.109-1_amd64.deb && \
-# wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb -O /tmp/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb && \
-# wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcurand-dev-11-3_10.2.4.109-1_amd64.deb -O /tmp/libcurand-dev-11-3_10.2.4.109-1_amd64.deb && \
-# dpkg -i /tmp/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb && \
-# dpkg -i /tmp/libcublas-dev-11-3_11.5.1.109-1_amd64.deb && \
-# dpkg -i /tmp/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb && \
-# dpkg -i /tmp/libcurand-dev-11-3_10.2.4.109-1_amd64.deb
-# """ 
-# # Change ‘username’ to your Databricks username in DBFS
-# # Example: username = “stephen.offer@databricks.com”
-# username = "puneet.jain@databricks.com"
-# dbutils.fs.put("dbfs:/Users/{0}/init/ray.sh".format(username), kernel_gateway_init, True)
-# "dbfs:/Users/{0}/init/ray.sh".format(username)
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb -O /tmp/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb && \
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcublas-dev-11-3_11.5.1.109-1_amd64.deb -O /tmp/libcublas-dev-11-3_11.5.1.109-1_amd64.deb && \
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb -O /tmp/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb && \
+wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/libcurand-dev-11-3_10.2.4.109-1_amd64.deb -O /tmp/libcurand-dev-11-3_10.2.4.109-1_amd64.deb && \
+dpkg -i /tmp/libcusparse-dev-11-3_11.5.0.58-1_amd64.deb && \
+dpkg -i /tmp/libcublas-dev-11-3_11.5.1.109-1_amd64.deb && \
+dpkg -i /tmp/libcusolver-dev-11-3_11.1.2.109-1_amd64.deb && \
+dpkg -i /tmp/libcurand-dev-11-3_10.2.4.109-1_amd64.deb
+""" 
+# Change ‘username’ to your Databricks username in DBFS
+# Example: username = “stephen.offer@databricks.com”
+username = "jeanne.choo@databricks.com"
+dbutils.fs.put("dbfs:/Users/{0}/init/ray.sh".format(username), kernel_gateway_init, True)
+"dbfs:/Users/{0}/init/ray.sh".format(username)
 
 # COMMAND ----------
 
@@ -65,6 +65,11 @@
 # MAGIC ## Set up Ray <a name="setup"></a>
 # MAGIC
 # MAGIC First, Let us start a ray cluster based on the cluster configuration. we need to specify the number of cores and gpus available per worker to **setup_ray_cluster** to create the correct multi-node setup
+
+# COMMAND ----------
+
+import os
+os.environ["DS_BUILD_OPS"]="1"
 
 # COMMAND ----------
 
@@ -140,7 +145,7 @@ from training.consts import (
 
 pretrained_model_name_or_path = "EleutherAI/pythia-12b"
 use_gpu = True
-num_workers = 16 # Configure based on the total gpus across the worker node
+num_workers = 12 # Configure based on the total gpus across the worker node
 num_cpu_cores_per_worker = 96 # total cpu's present in each node
 num_gpu_per_worker = 4 # total gpu's present in each node
 max_length = 1024
@@ -154,6 +159,7 @@ experiment_location = f"/Users/{username}/dolly_multi-gpu"
 # COMMAND ----------
 
 # shutdown_ray_cluster()
+# ray.util.spark.shutdown_ray_cluster()
 
 # COMMAND ----------
 
@@ -174,7 +180,7 @@ setup_ray_cluster(
 # COMMAND ----------
 
 runtime_env = {
-    "env_vars": {"RAY_memory_monitor_refresh_ms": "0"}
+    "env_vars": {"RAY_memory_monitor_refresh_ms": "0"},
 }
 ray.init()
 
@@ -478,6 +484,10 @@ trainer = HuggingFaceTrainer(
 
 # COMMAND ----------
 
+# MAGIC %pip list
+
+# COMMAND ----------
+
 # DBTITLE 0,glltddukjcuvujehr
 results = trainer.fit()
 
@@ -490,6 +500,12 @@ results = trainer.fit()
 
 # MAGIC %md
 # MAGIC You can use the returned {class}`~ray.air.Result` object to access metrics and the Ray AIR {class}`~ray.air.checkpoint.Checkpoint` associated with the last iteration.
+
+# COMMAND ----------
+
+# MAGIC %sh cat /dbfs/jeanne.choo@databricks.com/dolly_train/job/HuggingFaceTrainer_2023-06-06_01-08-57/HuggingFaceTrainer_b6fde_00000_0_2023-06-06_01-08-58/error.txt
+# MAGIC
+# MAGIC
 
 # COMMAND ----------
 
